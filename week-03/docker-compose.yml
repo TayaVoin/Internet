@@ -1,11 +1,11 @@
 version: '3.8'
 
 services:
-  # Первый сервис (devices - ваш основной)
+  # Первый сервис
   devices-service:
-    build: ./service1  # Предполагается, что первый сервис уже есть
+    build: ./service1
     ports:
-      - "8106:8000"  # Пробрасываем порт из варианта
+      - "8106:8000"
     networks:
       - gateway-network
     environment:
@@ -13,11 +13,11 @@ services:
       - SERVICE_PORT=8000
     container_name: devices-service-s03
 
-  # Второй сервис (other)
+  # Второй сервис
   other-service:
     build: ./service2
     ports:
-      - "8107:8107"  # Порт для второго сервиса
+      - "8107:8107"
     networks:
       - gateway-network
     environment:
