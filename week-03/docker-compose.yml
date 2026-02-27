@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  # Первый сервис (devices - ваш основной)
+  devices-service:
+    build: ./service1  # Предполагается, что первый сервис уже есть
+    ports:
+      - "8106:8000"  # Пробрасываем порт из варианта
+    networks:
+      - gateway-network
+    environment:
+      - SERVICE_NAME=devices-service
+      - SERVICE_PORT=8000
+    container_name: devices-service-s03
+
+  # Второй сервис (other)
+  other-service:
+    build: ./service2
+    ports:
+      - "8107:8107"  # Порт для второго сервиса
+    networks:
+      - gateway-network
+    environment:
+      - SERVICE_NAME=other-service
+      - SERVICE_PORT=8107
+    container_name: other-service-s03
+
+  # Nginx Gateway
+  gateway:
+    image: nginx:alpine
+    ports:
+      - "8080:8080"  # Порт для доступа к gateway
+    volumes:
+      - ./infra/nginx.conf:/etc/nginx/nginx.conf:ro
+    networks:
+      - gateway-network
+    depends_on:
+      - devices-service
+      - other-service
+    container_name: gateway-nginx
+
+networks:
+  gateway-network:
+    driver: bridge
+    name: gateway-network-s03
