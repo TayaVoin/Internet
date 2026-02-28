@@ -1,0 +1,10 @@
+services:
+  devices-graphql:
+    build: .
+    ports:
+      - "8166:8000"
+    volumes:
+      - ./app:/app/app
+    environment:
+      - SERVICE_NAME=devices-graphql-s03
+    container_name: devices-graphql-s03

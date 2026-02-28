@@ -1,1 +1,19 @@
-# В этом месте вам необходимо: опишите GraphQL схему
+# GraphQL схема для сервиса devices
+# Вариант: devices-s03
+
+type Device {
+  id: ID!
+  name: String!
+  serial: String!
+  status: String
+  createdAt: String
+}
+
+type Query {
+  devices: [Device!]!
+  device(id: ID!): Device
+}
+
+type Mutation {
+  createDevice(name: String!, serial: String!, status: String): Device!
+}
