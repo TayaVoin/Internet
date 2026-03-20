@@ -1,3 +1,38 @@
+# Виртуальное окружение
 .venv
+venv
+env
+ENV
+
+# Python кэш
 __pycache__
 *.pyc
+*.pyo
+*.pyd
+.pytest_cache
+
+# Git
+.git
+.gitignore
+
+# Docker
+.dockerignore
+Dockerfile
+docker-compose*.yml
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# Тесты и документация
+tests/
+README.md
+week-10.md
+questions.md
+report.md
+starter/
+
+# Логи
+*.log
