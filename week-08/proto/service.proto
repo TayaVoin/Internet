@@ -1,0 +1,50 @@
+syntax = "proto3";
+
+package bookings.v1;
+
+// Сервис бронирований
+service BookingsService {
+  rpc CreateBooking (CreateBookingRequest) returns (Booking);
+  rpc GetBooking (GetBookingRequest) returns (Booking);
+  
+  rpc SubscribeBookings (SubscribeRequest) returns (stream BookingUpdate);
+}
+
+// Сообщение для создания бронирования
+message CreateBookingRequest {
+  string user_id = 1;
+  string item_id = 2;
+  string date = 3;
+  int64 timestamp = 4;
+}
+
+// Бронирование
+message Booking {
+  string id = 1;
+  string user_id = 2;
+  string item_id = 3;
+  string date = 4;
+  string status = 5;
+  int64 created_at = 6;
+  int64 updated_at = 7;
+}
+
+// Запрос на получение бронирования
+message GetBookingRequest {
+  string id = 1;
+}
+
+// Запрос на подписку
+message SubscribeRequest {
+  string user_id = 1;
+  int32 limit = 2;
+}
+
+// Обновление бронирования для стриминга
+message BookingUpdate {
+  string id = 1;
+  string user_id = 2;
+  string status = 3;
+  string message = 4;
+  int64 timestamp = 5;
+}
