@@ -1,2 +1,575 @@
-<!doctype html>
-<!-- В этом месте вам необходимо: реализуйте WebRTC клиент -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC P2P Чат - logs-s03</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #F4EEE6;
+            color: #2d3e2d;
+        }
+        h1 {
+            color: #94C17D;
+            text-align: center;
+            border-bottom: 3px solid #FFABAC;
+            padding-bottom: 15px;
+            font-weight: 500;
+            letter-spacing: 1px;
+        }
+        .project-code {
+            text-align: center;
+            color: #94C17D;
+            font-size: 14px;
+            margin-bottom: 20px;
+            background-color: rgba(148, 193, 125, 0.1);
+            padding: 5px 15px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-left: auto;
+            margin-right: auto;
+            width: fit-content;
+        }
+        .status {
+            padding: 15px 20px;
+            border-radius: 30px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
+            font-size: 16px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        }
+        .connected {
+            background-color: #94C17D;
+            color: white;
+        }
+        .disconnected {
+            background-color: #FFABAC;
+            color: white;
+        }
+        .connecting {
+            background-color: #FFABAC;
+            color: white;
+            opacity: 0.8;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .panel {
+            background: white;
+            border-radius: 30px;
+            padding: 25px;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.03);
+            border: 1px solid rgba(148, 193, 125, 0.2);
+        }
+        h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            color: #94C17D;
+            font-size: 20px;
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        .messages {
+            height: 250px;
+            overflow-y: auto;
+            border: 1px solid #e8e0d8;
+            border-radius: 30px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background: #faf7f2;
+        }
+        .message {
+            margin-bottom: 10px;
+            padding: 12px 18px;
+            border-radius: 25px;
+            max-width: 70%;
+            font-size: 14px;
+            line-height: 1.4;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .message.local {
+            background-color: #94C17D;
+            color: white;
+            margin-left: auto;
+            border-bottom-right-radius: 5px;
+        }
+        .message.remote {
+            background-color: #FFABAC;
+            color: white;
+            margin-right: auto;
+            border-bottom-left-radius: 5px;
+        }
+        .message.system {
+            background-color: #F4EEE6;
+            color: #7f8c7f;
+            text-align: center;
+            font-style: italic;
+            max-width: 90%;
+            margin-left: auto;
+            margin-right: auto;
+            font-size: 13px;
+            box-shadow: none;
+        }
+        .input-group {
+            display: flex;
+            gap: 12px;
+        }
+        input[type="text"] {
+            flex: 1;
+            padding: 15px 20px;
+            border: 1px solid #e8e0d8;
+            border-radius: 40px;
+            font-size: 15px;
+            background-color: #faf7f2;
+            transition: all 0.2s;
+        }
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #94C17D;
+            background-color: white;
+            box-shadow: 0 0 0 3px rgba(148, 193, 125, 0.1);
+        }
+        input[type="text"]::placeholder {
+            color: #b5a99a;
+        }
+        button {
+            padding: 15px 30px;
+            background-color: #94C17D;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-size: 15px;
+            font-weight: 500;
+            transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(148, 193, 125, 0.3);
+            letter-spacing: 0.5px;
+        }
+        button:hover {
+            background-color: #85b36f;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(148, 193, 125, 0.4);
+        }
+        button:disabled {
+            background-color: #d4cfc8;
+            box-shadow: none;
+            transform: none;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+        button#answerBtn {
+            background-color: #FFABAC;
+            box-shadow: 0 4px 12px rgba(255, 171, 172, 0.3);
+        }
+        button#answerBtn:hover {
+            background-color: #ff9a9b;
+            box-shadow: 0 6px 16px rgba(255, 171, 172, 0.4);
+        }
+        button#disconnectBtn {
+            background-color: #FFABAC;
+            box-shadow: 0 4px 12px rgba(255, 171, 172, 0.3);
+        }
+        button#disconnectBtn:hover {
+            background-color: #ff9a9b;
+            box-shadow: 0 6px 16px rgba(255, 171, 172, 0.4);
+        }
+        button#sendBtn {
+            background-color: #94C17D;
+            padding: 15px 35px;
+        }
+        .info {
+            font-size: 13px;
+            color: #b5a99a;
+            margin-top: 12px;
+            background-color: #faf7f2;
+            padding: 12px 18px;
+            border-radius: 40px;
+        }
+        .step {
+            display: inline-block;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background-color: #94C17D;
+            color: white;
+            text-align: center;
+            line-height: 24px;
+            margin-right: 8px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .control-buttons {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .control-buttons button {
+            flex: 1;
+            min-width: 160px;
+        }
+        @media (max-width: 600px) {
+            .control-buttons {
+                flex-direction: column;
+            }
+            button {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>WebRTC P2P Чат</h1>
+    <div class="project-code">Project: logs-s03</div>
+    
+    <div class="container">
+        <!-- Статус соединения -->
+        <div class="panel">
+            <h2>Статус</h2>
+            <div id="status" class="status disconnected">Отключен</div>
+            <div class="info">
+                <span class="step">1</span> Подключение к Signaling серверу...<br>
+                <span class="step">2</span> Обмен SDP и ICE кандидатами...<br>
+                <span class="step">3</span> Установка P2P соединения...<br>
+                <span class="step">4</span> Готово к общению!
+            </div>
+        </div>
+
+        <!-- Управление соединением -->
+        <div class="panel">
+            <h2>🔌 Управление</h2>
+            <div class="control-buttons">
+                <button id="connectBtn" onclick="connect()">Создать соединение</button>
+                <button id="answerBtn" onclick="answer()">Ответить</button>
+                <button id="disconnectBtn" onclick="disconnect()" disabled>Отключиться</button>
+            </div>
+            <div class="info" style="margin-top: 15px;">
+                <strong>Инструкция:</strong> Откройте две вкладки. В первой нажмите "Создать соединение", во второй "Ответить".
+            </div>
+        </div>
+
+        <!-- Чат -->
+        <div class="panel">
+            <h2>Чат</h2>
+            <div id="messages" class="messages"></div>
+            <div class="input-group">
+                <input type="text" id="messageInput" placeholder="Введите сообщение..." disabled>
+                <button id="sendBtn" onclick="sendMessage()" disabled>Отправить</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Конфигурация
+        const PROJECT_CODE = 'logs-s03';
+        const SIGNALING_URL = 'ws://localhost:8765';
+        
+        // STUN серверы (бесплатные публичные)
+        const ICE_SERVERS = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' },
+                { urls: 'stun:stun2.l.google.com:19302' },
+                { urls: 'stun:stun3.l.google.com:19302' },
+                { urls: 'stun:stun4.l.google.com:19302' }
+            ]
+        };
+
+        // Состояние
+        let signalingSocket = null;
+        let peerConnection = null;
+        let dataChannel = null;
+        let isInitiator = false;
+
+        // Элементы DOM
+        const statusEl = document.getElementById('status');
+        const connectBtn = document.getElementById('connectBtn');
+        const answerBtn = document.getElementById('answerBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const messageInput = document.getElementById('messageInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const messagesEl = document.getElementById('messages');
+
+        // Вспомогательные функции
+        function setStatus(text, type) {
+            statusEl.textContent = text;
+            statusEl.className = `status ${type}`;
+        }
+
+        function addMessage(text, type) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}`;
+            msgDiv.textContent = text;
+            messagesEl.appendChild(msgDiv);
+            messagesEl.scrollTop = messagesEl.scrollHeight;
+        }
+
+        function logSystem(message) {
+            console.log(`[SYSTEM] ${message}`);
+            addMessage(message, 'system');
+        }
+
+        // Подключение к Signaling серверу
+        function connectSignaling() {
+            logSystem('Подключение к Signaling серверу...');
+            setStatus('Подключение к Signaling...', 'connecting');
+            
+            signalingSocket = new WebSocket(SIGNALING_URL);
+            
+            signalingSocket.onopen = () => {
+                logSystem('Подключен к Signaling серверу');
+                setStatus('Подключен к Signaling', 'connected');
+            };
+            
+            signalingSocket.onmessage = (event) => {
+                handleSignalingMessage(event.data);
+            };
+            
+            signalingSocket.onclose = () => {
+                logSystem('Отключен от Signaling сервера');
+                setStatus('Отключен', 'disconnected');
+                connectBtn.disabled = false;
+                answerBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                messageInput.disabled = true;
+                sendBtn.disabled = true;
+            };
+            
+            signalingSocket.onerror = (error) => {
+                logSystem(`Ошибка Signaling: ${error}`);
+                setStatus('Ошибка подключения', 'disconnected');
+            };
+        }
+
+        // Обработка сообщений от Signaling сервера
+        function handleSignalingMessage(data) {
+            try {
+                const message = JSON.parse(data);
+                logSystem(`Получено: ${message.type}`);
+                
+                switch (message.type) {
+                    case 'offer':
+                        handleOffer(message);
+                        break;
+                    case 'answer':
+                        handleAnswer(message);
+                        break;
+                    case 'candidate':
+                        handleCandidate(message);
+                        break;
+                    default:
+                        logSystem(`Неизвестный тип: ${message.type}`);
+                }
+            } catch (e) {
+                logSystem(`Ошибка парсинга: ${data}`);
+            }
+        }
+
+        // Создание PeerConnection
+        function createPeerConnection(isOfferer) {
+            logSystem('Создание PeerConnection...');
+            
+            peerConnection = new RTCPeerConnection(ICE_SERVERS);
+            
+            // Обработка ICE кандидатов
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    logSystem('ICE кандидат найден');
+                    sendToSignaling({
+                        type: 'candidate',
+                        candidate: event.candidate
+                    });
+                }
+            };
+            
+            peerConnection.oniceconnectionstatechange = () => {
+                logSystem(`ICE состояние: ${peerConnection.iceConnectionState}`);
+                if (peerConnection.iceConnectionState === 'connected' || 
+                    peerConnection.iceConnectionState === 'completed') {
+                    setStatus('P2P соединение установлено!', 'connected');
+                    messageInput.disabled = false;
+                    sendBtn.disabled = false;
+                    disconnectBtn.disabled = false;
+                    connectBtn.disabled = true;
+                    answerBtn.disabled = true;
+                    logSystem('P2P соединение готово! Можете общаться.');
+                }
+            };
+            
+            peerConnection.ondatachannel = (event) => {
+                logSystem('DataChannel получен');
+                dataChannel = event.channel;
+                setupDataChannel();
+            };
+            
+            return peerConnection;
+        }
+
+        // Настройка DataChannel
+        function setupDataChannel() {
+            if (!dataChannel) return;
+            
+            dataChannel.onopen = () => {
+                logSystem('DataChannel открыт');
+            };
+            
+            dataChannel.onclose = () => {
+                logSystem('DataChannel закрыт');
+            };
+            
+            dataChannel.onmessage = (event) => {
+                addMessage(`Собеседник: ${event.data}`, 'remote');
+            };
+        }
+
+        // Создание DataChannel (для инициатора)
+        function createDataChannel() {
+            logSystem('Создание DataChannel');
+            dataChannel = peerConnection.createDataChannel('chat');
+            setupDataChannel();
+        }
+
+        // Отправка сообщения через Signaling
+        function sendToSignaling(message) {
+            if (signalingSocket && signalingSocket.readyState === WebSocket.OPEN) {
+                signalingSocket.send(JSON.stringify(message));
+            }
+        }
+
+        // Инициатор: создает offer
+        async function connect() {
+            logSystem('Инициализация как Offerer...');
+            isInitiator = true;
+            
+            connectSignaling();
+            
+            // Ждем подключения к Signaling
+            await new Promise(resolve => {
+                if (signalingSocket.readyState === WebSocket.OPEN) {
+                    resolve();
+                } else {
+                    signalingSocket.onopen = resolve;
+                }
+            });
+            
+            createPeerConnection(true);
+            createDataChannel();
+            
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+            
+            sendToSignaling({
+                type: 'offer',
+                sdp: peerConnection.localDescription
+            });
+            
+            logSystem('Offer отправлен');
+            connectBtn.disabled = true;
+            answerBtn.disabled = true;
+        }
+
+        // Ответчик: подключается и ждет offer
+        async function answer() {
+            logSystem('Инициализация как Answerer...');
+            isInitiator = false;
+            
+            connectSignaling();
+            
+            // Ждем подключения к Signaling
+            await new Promise(resolve => {
+                if (signalingSocket.readyState === WebSocket.OPEN) {
+                    resolve();
+                } else {
+                    signalingSocket.onopen = resolve;
+                }
+            });
+            
+            createPeerConnection(false);
+            
+            logSystem('Ожидание Offer от другого клиента...');
+            connectBtn.disabled = true;
+            answerBtn.disabled = true;
+        }
+
+        // Обработка offer (для ответчика)
+        async function handleOffer(message) {
+            logSystem('Получен Offer, создаем Answer...');
+            
+            await peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp));
+            const answer = await peerConnection.createAnswer();
+            await peerConnection.setLocalDescription(answer);
+            
+            sendToSignaling({
+                type: 'answer',
+                sdp: peerConnection.localDescription
+            });
+            
+            logSystem('Answer отправлен');
+        }
+
+        function handleAnswer(message) {
+            logSystem('Получен Answer');
+            peerConnection.setRemoteDescription(new RTCSessionDescription(message.sdp));
+        }
+
+        function handleCandidate(message) {
+            logSystem('Добавление ICE кандидата');
+            peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+        }
+
+        function disconnect() {
+            logSystem('Отключение...');
+            
+            if (dataChannel) {
+                dataChannel.close();
+                dataChannel = null;
+            }
+            
+            if (peerConnection) {
+                peerConnection.close();
+                peerConnection = null;
+            }
+            
+            if (signalingSocket) {
+                signalingSocket.close();
+                signalingSocket = null;
+            }
+            
+            setStatus('Отключен', 'disconnected');
+            connectBtn.disabled = false;
+            answerBtn.disabled = false;
+            disconnectBtn.disabled = true;
+            messageInput.disabled = true;
+            sendBtn.disabled = true;
+        }
+
+        function sendMessage() {
+            const text = messageInput.value.trim();
+            if (text && dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(text);
+                addMessage(`Вы: ${text}`, 'local');
+                messageInput.value = '';
+            }
+        }
+
+        // Enter для отправки
+        messageInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Автоматическое подключение при загрузке (опционально)
+        window.onload = () => {
+            logSystem('Клиент загружен. Project: logs-s03');
+            logSystem('Нажмите "Создать соединение" или "Ответить" для начала');
+        };
+    </script>
+</body>
+</html>

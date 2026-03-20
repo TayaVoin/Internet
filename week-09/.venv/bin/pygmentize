@@ -1,0 +1,6 @@
+#!/Users/taya/Documents/intteh/distrib_systems_tasks/weeks/week-09/.venv/bin/python3.12
+import sys
+from pygments.cmdline import main
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(main())
