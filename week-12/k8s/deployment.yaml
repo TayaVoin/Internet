@@ -1,1 +1,58 @@
-# В этом месте вам необходимо: Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bookings-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: bookings-app
+      component: backend
+  template:
+    metadata:
+      labels:
+        app: bookings-app
+        component: backend
+        version: v1
+    spec:
+      containers:
+        - name: bookings-container
+          image: bookings-svc-s03:latest
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8152
+              name: http
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "256Mi"
+              cpu: "500m"
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 8152
+            initialDelaySeconds: 5
+            periodSeconds: 10
+            timeoutSeconds: 3
+            successThreshold: 1
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8152
+            initialDelaySeconds: 15
+            periodSeconds: 20
+            timeoutSeconds: 3
+            failureThreshold: 3
+          env:
+            - name: SERVICE_NAME
+              value: bookings-svc-s03
+            - name: SERVICE_PORT
+              value: "8152"
+            - name: DB_HOST
+              value: "postgres-service"
+            - name: DB_PORT
+              value: "5432"

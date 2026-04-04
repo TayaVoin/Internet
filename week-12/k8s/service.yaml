@@ -1,1 +1,18 @@
-# В этом месте вам необходимо: Service
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookings-service
+  labels:
+    app: bookings-app
+    component: backend
+spec:
+  selector:
+    app: bookings-app
+    component: backend
+  ports:
+    - name: http
+      protocol: TCP
+      port: 80
+      targetPort: 8152
+  type: ClusterIP
