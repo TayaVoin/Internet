@@ -1,22 +1,73 @@
-version: '3.9'
+version: '3.8'
+
 services:
-  app:
-    # Замените на имя образа
-    image: primer/obraz
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    networks:
-      - app-net
-  gateway:
-    # Замените на имя образа
-    image: primer/obraz
+  # Основной сервис сообщений
+  messages-svc-s03:
+    build: ./app
+    container_name: messages-svc-s03
+    ports:
+      - "8213:8213"
+    environment:
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=secret
+      - DB_NAME=messages
     depends_on:
-      - app
+      postgres:
+        condition: service_healthy
     networks:
-      - app-net
+      - messages-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8213/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+
+  # База данных PostgreSQL
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres-db
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=messages
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - messages-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d messages"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # Gateway (Nginx)
+  gateway:
+    build: ./gateway
+    container_name: gateway-nginx
+    ports:
+      - "8080:8080"
+    # depends_on:
+    #   messages-svc-s03:
+    #     condition: service_healthy
+    networks:
+      - messages-network
+    # healthcheck:
+    #   test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+    #   interval: 10s
+    #   timeout: 5s
+    #   retries: 3
+
 networks:
-  app-net:
+  messages-network:
     driver: bridge
+    name: messages-network
+
+volumes:
+  postgres-data:
+    name: postgres-data
